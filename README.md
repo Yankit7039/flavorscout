@@ -99,4 +99,22 @@ flavor_scout/
 - AI analysis may take several minutes depending on the number of comments and batch size.
 - The analyzer processes comments in batches to avoid token limits and rate limits.
 
+### Deployment
+
+#### Deploy to Railway
+
+See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for detailed instructions on deploying to Railway.
+
+**Quick steps:**
+1. Push your code to GitHub
+2. Create a new project on [Railway](https://railway.app)
+3. Connect your GitHub repository
+4. Add environment variables in Railway dashboard:
+   - `REDDIT_CLIENT_ID`
+   - `REDDIT_CLIENT_SECRET`
+   - `REDDIT_USER_AGENT` (optional)
+   - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`
+   - `ANTHROPIC_MODEL` or `OPENAI_MODEL` (optional)
+5. Railway will automatically deploy your app!
+
 

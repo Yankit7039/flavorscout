@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -45,18 +46,34 @@ st.caption("Mining Reddit conversations to recommend next-gen product flavors us
 
 
 def get_reddit_secrets():
+    """Get Reddit credentials from Streamlit secrets or environment variables."""
+    # Try Streamlit secrets first
     if "reddit" in st.secrets:
         sec = st.secrets["reddit"]
-        return sec.get("client_id"), sec.get("client_secret"), sec.get("user_agent", "flavor-scout-app")
+        client_id = sec.get("client_id")
+        client_secret = sec.get("client_secret")
+        user_agent = sec.get("user_agent", "flavor-scout-app")
+        if client_id and client_secret:
+            return client_id, client_secret, user_agent
+    
+    # Fallback to environment variables (useful for Railway)
+    client_id = os.getenv("REDDIT_CLIENT_ID")
+    client_secret = os.getenv("REDDIT_CLIENT_SECRET")
+    user_agent = os.getenv("REDDIT_USER_AGENT", "flavor-scout-app")
+    
+    if client_id and client_secret:
+        return client_id, client_secret, user_agent
+    
     return None, None, "flavor-scout-app"
 
 
 def get_llm_secrets():
-    """Get LLM API credentials from Streamlit secrets."""
+    """Get LLM API credentials from Streamlit secrets or environment variables."""
     provider = "anthropic"  # Default to Anthropic
     api_key = None
     model = None
 
+    # Try Streamlit secrets first
     if "anthropic" in st.secrets:
         provider = "anthropic"
         api_key = st.secrets["anthropic"].get("api_key")
@@ -65,6 +82,20 @@ def get_llm_secrets():
         provider = "openai"
         api_key = st.secrets["openai"].get("api_key")
         model = st.secrets["openai"].get("model", "gpt-4")
+    
+    # Fallback to environment variables (useful for Railway)
+    if not api_key:
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+        openai_key = os.getenv("OPENAI_API_KEY")
+        
+        if anthropic_key:
+            provider = "anthropic"
+            api_key = anthropic_key
+            model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
+        elif openai_key:
+            provider = "openai"
+            api_key = openai_key
+            model = os.getenv("OPENAI_MODEL", "gpt-4")
 
     return provider, api_key, model
 
