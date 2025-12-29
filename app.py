@@ -13,6 +13,7 @@ from modules.scorer import (
     score_flavor_recommendations,
 )
 from modules.scraper import scrape_reddit, save_to_json
+from modules.scraper_amazon import scrape_amazon_reviews_simple
 from modules.visualizer import (
     create_brand_fit_chart,
     create_flavor_frequency_chart,
@@ -67,6 +68,22 @@ def get_reddit_secrets():
     return None, None, "flavor-scout-app"
 
 
+def get_rapidapi_secrets():
+    """Get RapidAPI key from Streamlit secrets or environment variables."""
+    # Try Streamlit secrets first
+    if "rapidapi" in st.secrets:
+        api_key = st.secrets["rapidapi"].get("api_key")
+        if api_key:
+            return api_key
+    
+    # Fallback to environment variables
+    api_key = os.getenv("RAPIDAPI_KEY")
+    if api_key:
+        return api_key
+    
+    return None
+
+
 def get_llm_secrets():
     """Get LLM API credentials from Streamlit secrets or environment variables."""
     provider = "anthropic"  # Default to Anthropic
@@ -104,10 +121,34 @@ with st.sidebar:
     st.header("Controls")
     st.write("Use these options while prototyping locally.")
     
+    st.subheader("Data Source")
+    data_source = st.selectbox(
+        "Choose data source",
+        ["Amazon Reviews (RapidAPI)", "Reddit"],
+        help="Amazon Reviews: Fast setup, no approval needed. Reddit: Requires commercial approval."
+    )
+    
     st.subheader("Data Collection")
-    fetch_data = st.button("Fetch latest Reddit data")
-    limit = st.slider("Items per query", min_value=50, max_value=300, value=100, step=50)
-    days = st.slider("Lookback window (days)", min_value=7, max_value=180, value=90, step=7)
+    
+    if data_source == "Amazon Reviews (RapidAPI)":
+        st.info("💡 **Recommended**: No approval needed, commercial use allowed!")
+        fetch_data = st.button("Fetch Amazon product reviews")
+        
+        # Amazon-specific settings
+        product_asins_input = st.text_area(
+            "Amazon Product ASINs (one per line)",
+            placeholder="B08XYZ123\nB09ABC456\nB10DEF789",
+            help="Find ASINs in Amazon product URLs: amazon.in/dp/ASIN_HERE"
+        )
+        max_reviews = st.slider("Max reviews per product", min_value=10, max_value=200, value=50, step=10)
+        limit = max_reviews  # For compatibility
+        days = 90  # Not used for Amazon but kept for compatibility
+        
+    else:  # Reddit
+        st.warning("⚠️ **Reddit requires commercial approval**. See REDDIT_COMPLIANCE.md")
+        fetch_data = st.button("Fetch latest Reddit data")
+        limit = st.slider("Items per query", min_value=50, max_value=300, value=100, step=50)
+        days = st.slider("Lookback window (days)", min_value=7, max_value=180, value=90, step=7)
     
     st.divider()
     
@@ -117,22 +158,53 @@ with st.sidebar:
 
 
 if fetch_data:
-    client_id, client_secret, user_agent = get_reddit_secrets()
-    if not client_id or not client_secret:
-        st.error("Reddit credentials missing. Add them to `.streamlit/secrets.toml` under `[reddit]`.")
-    else:
-        with st.spinner("Scraping Reddit… this may take a minute."):
-            raw = scrape_reddit(
-                client_id=client_id,
-                client_secret=client_secret,
-                user_agent=user_agent,
-                limit_per_query=limit,
-                since_days=days,
+    if data_source == "Amazon Reviews (RapidAPI)":
+        # Amazon Reviews scraping
+        api_key = get_rapidapi_secrets()
+        if not api_key:
+            st.error(
+                "RapidAPI key missing. Add to `.streamlit/secrets.toml`:\n"
+                "```toml\n[rapidapi]\napi_key = 'your_rapidapi_key'\n```\n\n"
+                "Get your key from: https://rapidapi.com"
             )
-            save_to_json(raw, RAW_PATH)
-            cleaned = clean_records(raw)
-            save_clean_json(cleaned, PROCESSED_PATH)
-        st.success(f"Fetched and processed {len(raw)} items.")
+        elif not product_asins_input.strip():
+            st.error("Please enter at least one Amazon product ASIN.")
+        else:
+            # Parse ASINs from input
+            product_asins = [asin.strip() for asin in product_asins_input.strip().split("\n") if asin.strip()]
+            
+            with st.spinner(f"Fetching reviews from {len(product_asins)} product(s)… this may take a minute."):
+                try:
+                    raw = scrape_amazon_reviews_simple(
+                        product_ids=product_asins,
+                        api_key=api_key,
+                        max_reviews=max_reviews,
+                    )
+                    save_to_json(raw, RAW_PATH)
+                    cleaned = clean_records(raw)
+                    save_clean_json(cleaned, PROCESSED_PATH)
+                    st.success(f"Fetched and processed {len(raw)} reviews from {len(product_asins)} product(s).")
+                except Exception as e:
+                    st.error(f"Error fetching Amazon reviews: {e}")
+                    st.info("Make sure you've subscribed to the Amazon Product Reviews API on RapidAPI.")
+    
+    else:  # Reddit
+        client_id, client_secret, user_agent = get_reddit_secrets()
+        if not client_id or not client_secret:
+            st.error("Reddit credentials missing. Add them to `.streamlit/secrets.toml` under `[reddit]`.")
+        else:
+            with st.spinner("Scraping Reddit… this may take a minute."):
+                raw = scrape_reddit(
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    user_agent=user_agent,
+                    limit_per_query=limit,
+                    since_days=days,
+                )
+                save_to_json(raw, RAW_PATH)
+                cleaned = clean_records(raw)
+                save_clean_json(cleaned, PROCESSED_PATH)
+            st.success(f"Fetched and processed {len(raw)} items.")
 
 
 def load_processed_df() -> pd.DataFrame:

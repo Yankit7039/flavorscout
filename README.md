@@ -46,6 +46,31 @@ model = "gpt-4"  # Optional, defaults to gpt-4
 streamlit run app.py
 ```
 
+### ⚠️ Important: Reddit API Compliance
+
+**Commercial Use Requires Approval**: This application uses Reddit data for commercial purposes (HealthKart product development). According to Reddit's [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy), you **must obtain explicit written approval from Reddit** before using their API commercially.
+
+**See [REDDIT_COMPLIANCE.md](REDDIT_COMPLIANCE.md) for:**
+- Detailed compliance requirements
+- Steps to request commercial API access
+- Alternative approaches if approval isn't granted
+- Compliance checklist
+
+**Do not use this application commercially until you have Reddit's approval.**
+
+### 🚀 Quick Alternative: Amazon Reviews (No Approval Needed!)
+
+**Want to skip Reddit approval?** Use Amazon product reviews instead! 
+
+✅ **No approval needed** - Just sign up for RapidAPI  
+✅ **Commercial use allowed**  
+✅ **Better data quality** - Reviews specifically mention flavors  
+✅ **15-30 minute setup** - Much faster than Reddit approval  
+
+**See [QUICK_START_AMAZON.md](QUICK_START_AMAZON.md) for step-by-step instructions.**
+
+The app now supports both Reddit and Amazon Reviews - choose your data source in the sidebar!
+
 ### Project Structure
 
 ```text

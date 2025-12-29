@@ -1,5 +1,7 @@
 # How to Get Reddit API Credentials
 
+> ⚠️ **IMPORTANT - Commercial Use**: If you're using this app for commercial purposes (e.g., for HealthKart), you **must** get explicit written approval from Reddit before using their API. See [REDDIT_COMPLIANCE.md](REDDIT_COMPLIANCE.md) for details.
+
 Follow these steps to create a Reddit app and get your `client_id` and `client_secret`:
 
 ## Step 1: Log in to Reddit
@@ -17,10 +19,11 @@ Follow these steps to create a Reddit app and get your `client_id` and `client_s
 
 2. Fill in the form:
    - **Name**: `Flavor Scout` (or any name you like)
-   - **Type**: Select **"script"** (important!)
+   - **Type**: Select **"script"** for personal/testing use, or **"web app"** if you have commercial approval
+     - ⚠️ **Note**: "script" is for personal use only. Commercial use requires approval and may need "web app" type.
    - **Description**: Optional, e.g., "AI flavor recommendation tool"
-   - **About URL**: Leave blank or put `http://localhost`
-   - **Redirect URI**: Must be `http://localhost` (even if you won't use OAuth, Reddit requires this)
+   - **About URL**: Your production URL (e.g., `https://flavorscout-production.up.railway.app/`) or `http://localhost` for testing
+   - **Redirect URI**: Your production URL or `http://localhost` (Reddit requires this even if you won't use OAuth)
 
 3. Click **"create app"**
 
